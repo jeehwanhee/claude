@@ -1,0 +1,62 @@
+/* ===========================
+   Landing Page
+=========================== */
+.landing {
+  padding-bottom: var(--spacing-2xl);
+}
+
+.landing__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-sm);
+}
+
+.landing__title {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+}
+
+/* Load More */
+.landing__more {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-xl) var(--spacing-xl) 0;
+}
+
+.btn-load-more {
+  padding: 0.75rem 3rem;
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  transition: background var(--transition), border-color var(--transition), transform var(--transition);
+}
+
+.btn-load-more:hover:not(:disabled) {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+.btn-load-more:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ===========================
+   Responsive
+=========================== */
+@media (max-width: 600px) {
+  .grid-cards {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+  }
+
+  .landing__header {
+    padding: var(--spacing-lg) var(--spacing-md) var(--spacing-sm);
+  }
+}

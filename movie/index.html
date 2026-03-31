@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Movie App</title>
+  <link rel="stylesheet" href="./styles/global.css" />
+  <link rel="stylesheet" href="./styles/navbar.css" />
+  <link rel="stylesheet" href="./styles/landing.css" />
+  <link rel="stylesheet" href="./styles/movie.css" />
+  <link rel="stylesheet" href="./styles/auth.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- JS 로드 전 즉시 표시되는 스피너 -->
+    <div id="initial-loader" style="
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      min-height:100vh;
+      background:#141414;
+    ">
+      <div style="
+        width:44px;height:44px;
+        border:4px solid #333;
+        border-top-color:#e50914;
+        border-radius:50%;
+        animation:spin .8s linear infinite;
+      "></div>
+      <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+    </div>
+  </div>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
