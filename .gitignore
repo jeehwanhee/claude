@@ -1,2 +1,8 @@
 .claude
 movie/config.js
+
+
+movie/config.php
+
+movie/.vscode/
+movie/.idea/

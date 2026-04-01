@@ -32,6 +32,7 @@ function menuItems(context) {
 function buildNav(appEl) {
   const nav = document.createElement('nav');
   nav.className = 'navbar';
+  nav.setAttribute('aria-label', '주 내비게이션');
   nav.innerHTML = `
     <div class="navbar__inner">
       <a class="navbar__logo" href="/" data-link>🎬 Movie</a>
@@ -83,8 +84,8 @@ function buildNav(appEl) {
 
   // ── 로그아웃 ──
   nav.querySelectorAll('.navbar__logout').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      logout();
+    btn.addEventListener('click', async () => {
+      await logout();
       closeDrawer();
 
       // 기존 nav 요소를 새로 빌드한 nav(로그인 메뉴)로 즉시 교체

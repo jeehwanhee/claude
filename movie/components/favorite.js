@@ -1,6 +1,7 @@
 /**
  * @fileoverview 즐겨찾기 버튼 컴포넌트.
  * 로그인 상태에 따라 즐겨찾기 추가/해제 또는 /login 리다이렉트 동작을 수행합니다.
+ * API 실패 시 버튼 상태를 호출 전으로 원복합니다.
  */
 
 import { isLoggedIn, currentUser } from '../store/auth.js';
@@ -16,8 +17,9 @@ import { router } from '../router.js';
  * 즐겨찾기 버튼을 컨테이너에 삽입합니다.
  * @param {HTMLElement} containerEl - 버튼을 삽입할 부모 요소
  * @param {{ movieId: string|number, movieTitle: string, moviePost: string, movieRuntime: string }} movieData
+ * @returns {Promise<void>}
  */
-export function renderFavorite(containerEl, movieData) {
+export async function renderFavorite(containerEl, movieData) {
   const { movieId, movieTitle, moviePost, movieRuntime } = movieData;
 
   const loggedIn = isLoggedIn();
@@ -26,58 +28,86 @@ export function renderFavorite(containerEl, movieData) {
   const btn = document.createElement('button');
   btn.className = 'btn-favorite';
   btn.id = 'btn-favorite';
-  if (!loggedIn) {
-    btn.title = '로그인 후 이용 가능';
-  }
+  btn.setAttribute('aria-label', '즐겨찾기');
+  btn.title = loggedIn ? '' : '로그인 후 이용 가능';
+
+  // 초기 로딩 표시 (클릭 방지용 disabled)
+  btn.innerHTML = `♡ 즐겨찾기 <span class="favorite-count">...</span>`;
+  btn.disabled = true;
+  containerEl.appendChild(btn);
 
   /**
-   * localStorage 기준으로 즐겨찾기 여부를 새로 읽습니다.
-   * @returns {boolean}
+   * API에서 현재 즐겨찾기 상태를 읽어 버튼 UI를 갱신합니다.
    */
-  function isFav() {
-    return loggedIn && isFavorited(userId, String(movieId));
-  }
-
-  /**
-   * 현재 즐겨찾기 상태를 반영해 버튼을 즉시 업데이트합니다.
-   */
-  function refresh() {
-    const fav   = isFav();
-    const count = getFavoriteCount(movieId);
+  async function refresh() {
+    const [fav, count] = await Promise.all([
+      loggedIn ? isFavorited(userId, String(movieId)) : Promise.resolve(false),
+      getFavoriteCount(movieId),
+    ]);
 
     btn.innerHTML = `
       ${fav ? '★' : '☆'} ${fav ? '즐겨찾기 해제' : '즐겨찾기 추가'}
       <span class="favorite-count">${count}</span>
     `;
-
-    // 클래스 상태 동기화
+    btn.setAttribute('aria-label', fav ? '즐겨찾기 해제' : '즐겨찾기 추가');
     btn.classList.toggle('active', loggedIn && fav);
     btn.classList.toggle('ready',  loggedIn && !fav);
+    btn.dataset.fav = fav ? '1' : '0';
   }
 
-  // 초기 렌더
-  refresh();
+  // 초기 상태 로드 후 버튼 활성화
+  // ※ 비로그인이어도 disabled=false: 클릭하면 /login 리다이렉트 처리
+  await refresh();
+  btn.disabled = false;
 
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
+    // 비로그인 → 로그인 페이지로
     if (!loggedIn) {
       router.push('/login');
       return;
     }
 
-    if (isFav()) {
-      removeFavorite(userId, String(movieId));
-    } else {
-      addFavorite(userId, {
-        movieId:      String(movieId),
-        movieTitle,
-        moviePost,
-        movieRuntime,
-      });
+    const wasFav = btn.dataset.fav === '1';
+    btn.disabled = true;
+
+    try {
+      const result = wasFav
+        ? await removeFavorite(userId, String(movieId))
+        : await addFavorite(userId, { movieId: String(movieId), movieTitle, moviePost, movieRuntime });
+
+      if (result?.success) {
+        await refresh();
+      } else {
+        const msg = result?.message ?? 'API 오류가 발생했습니다.';
+        console.error('[Favorite]', msg);
+        showToast(msg);
+      }
+    } catch (err) {
+      console.error('[Favorite] 예외 발생:', err);
+    } finally {
+      // 항상 버튼 재활성화
+      btn.disabled = false;
     }
-
-    // localStorage 반영 후 즉시 UI 업데이트
-    refresh();
   });
+}
 
-  containerEl.appendChild(btn);
+/**
+ * 화면 하단에 잠깐 메시지를 표시합니다.
+ * @param {string} message
+ */
+function showToast(message) {
+  const existing = document.getElementById('fav-toast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'fav-toast';
+  toast.textContent = message;
+  toast.style.cssText = `
+    position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%);
+    background:rgba(30,30,30,0.95); color:#f5f5f1; padding:0.6rem 1.2rem;
+    border-radius:6px; font-size:0.875rem; z-index:9999;
+    border:1px solid #444; pointer-events:none;
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
 }

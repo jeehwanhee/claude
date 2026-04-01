@@ -143,6 +143,7 @@ export default async function LoginPage(container, _params) {
     const result = await login(email, password);
 
     if (result.success) {
+      renderNavBar(container);
       router.push('/');
     } else {
       showFormError(result.message);

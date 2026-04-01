@@ -35,18 +35,24 @@ export default async function LandingPage(container, _params) {
   // ── 로딩 스피너 ──
   const spinnerWrap = document.createElement('div');
   spinnerWrap.className = 'spinner-wrap';
+  spinnerWrap.setAttribute('role', 'status');
+  spinnerWrap.setAttribute('aria-live', 'polite');
+  spinnerWrap.setAttribute('aria-label', '영화 목록을 불러오는 중');
   spinnerWrap.innerHTML = '<div class="spinner"></div>';
   main.appendChild(spinnerWrap);
 
   // ── 데이터 패치 ──
-  const data = await getPopularMovies(1);
-
-  main.removeChild(spinnerWrap);
+  let data = null;
+  try {
+    data = await getPopularMovies(1);
+  } finally {
+    spinnerWrap.remove();
+  }
 
   if (!data || !data.results?.length) {
     main.innerHTML = `
-      <p style="text-align:center;padding:4rem;color:var(--color-text-muted)">
-        영화 목록을 불러오지 못했습니다.<br>
+      <p role="alert" style="text-align:center;padding:4rem;color:var(--color-text-muted)">
+        영화 목록을 불러올 수 없습니다.<br>
         <small>config.js의 TMDB_API_KEY를 확인하세요.</small>
       </p>`;
     renderFooter(container);
@@ -102,12 +108,17 @@ export default async function LandingPage(container, _params) {
     if (moreData?.results?.length) {
       renderGridCards(grid, moreData.results, 'movie', true);
       totalPages = moreData.total_pages;
-    }
 
-    if (currentPage >= totalPages) {
-      loadMoreBtn.textContent = '마지막 페이지입니다';
+      if (currentPage >= totalPages) {
+        loadMoreBtn.textContent = '마지막 페이지입니다';
+      } else {
+        loadMoreBtn.textContent = '더보기';
+        loadMoreBtn.disabled = false;
+      }
     } else {
-      loadMoreBtn.textContent = '더보기';
+      // API 실패 시 페이지 번호 원복 후 버튼 재활성화
+      currentPage--;
+      loadMoreBtn.textContent = '더보기 (재시도)';
       loadMoreBtn.disabled = false;
     }
   });

@@ -1,13 +1,15 @@
 /**
  * @fileoverview 영화 상세 페이지.
- * 영화 정보와 출연진을 렌더링하며, 즐겨찾기 버튼 자리를 마련합니다.
+ * 영화 정보와 출연진을 렌더링하며, 즐겨찾기 버튼을 연결합니다.
  */
 
 import { renderNavBar } from '../components/navbar.js';
 import { renderMainImage } from '../components/mainImage.js';
 import { renderGridCards } from '../components/gridCards.js';
+import { renderFavorite } from '../components/favorite.js';
 import { renderFooter } from '../components/footer.js';
 import { getMovieDetail, getMovieCredits } from '../api/tmdb.js';
+import { router } from '../router.js';
 
 /**
  * 금액을 달러 단위로 포맷합니다.
@@ -84,22 +86,32 @@ export default async function MovieDetailPage(container, params) {
   // ── 로딩 스피너 ──
   const spinnerWrap = document.createElement('div');
   spinnerWrap.className = 'spinner-wrap';
+  spinnerWrap.setAttribute('role', 'status');
+  spinnerWrap.setAttribute('aria-live', 'polite');
+  spinnerWrap.setAttribute('aria-label', '영화 정보를 불러오는 중');
   spinnerWrap.innerHTML = '<div class="spinner"></div>';
   main.appendChild(spinnerWrap);
 
-  // ── 병렬 데이터 패치 ──
-  const [movie, credits] = await Promise.all([
-    getMovieDetail(movieId),
-    getMovieCredits(movieId),
-  ]);
+  let movie = null;
+  let credits = null;
 
-  main.removeChild(spinnerWrap);
+  try {
+    // ── 병렬 데이터 패치 ──
+    [movie, credits] = await Promise.all([
+      getMovieDetail(movieId),
+      getMovieCredits(movieId),
+    ]);
+  } finally {
+    spinnerWrap.remove();
+  }
 
   if (!movie) {
     main.innerHTML = `
-      <p style="text-align:center;padding:4rem;color:var(--color-text-muted)">
-        영화 정보를 불러오지 못했습니다.
-      </p>`;
+      <div role="alert" style="text-align:center;padding:4rem;color:var(--color-text-muted)">
+        <p>영화 정보를 불러올 수 없습니다.</p>
+        <button onclick="" class="btn-load-more" style="margin-top:1.5rem" id="btn-home">홈으로</button>
+      </div>`;
+    main.querySelector('#btn-home').addEventListener('click', () => router.push('/'));
     renderFooter(container);
     return;
   }
@@ -120,10 +132,6 @@ export default async function MovieDetailPage(container, params) {
     <h1 class="movie-info__title">${escapeHtml(movie.title)}</h1>
     <div class="movie-info__grid">${buildInfoGrid(movie)}</div>
     <div class="movie-info__actions">
-      <!-- 즐겨찾기 버튼 (STEP 4에서 연결 예정) -->
-      <button class="btn-favorite" id="btn-favorite" disabled title="로그인 후 이용 가능">
-        ♡ 즐겨찾기 <span class="favorite-count" id="fav-count">0</span>
-      </button>
       <!-- 배우 토글 버튼 -->
       <button class="btn-cast-toggle" id="btn-cast-toggle">
         👥 배우 보기
@@ -131,6 +139,17 @@ export default async function MovieDetailPage(container, params) {
     </div>
   `;
   main.appendChild(infoSection);
+
+  // ── 즐겨찾기 버튼 삽입 (actions 앞에 prepend) ──
+  const actionsEl = infoSection.querySelector('.movie-info__actions');
+  await renderFavorite(actionsEl, {
+    movieId:      String(movie.id),
+    movieTitle:   movie.title,
+    moviePost:    movie.poster_path ?? '',
+    movieRuntime: movie.runtime ? String(movie.runtime) : '',
+  });
+  // 버튼을 맨 앞으로 이동
+  actionsEl.prepend(actionsEl.querySelector('#btn-favorite'));
 
   // ── 배우 섹션 (기본 숨김) ──
   const castSection = document.createElement('div');

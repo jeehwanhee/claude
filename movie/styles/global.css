@@ -59,6 +59,19 @@ a {
   text-decoration: none;
 }
 
+/* ===========================
+   Focus Visible
+=========================== */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
 button {
   cursor: pointer;
   font-family: inherit;

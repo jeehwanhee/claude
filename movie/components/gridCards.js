@@ -46,10 +46,12 @@ function createMovieCard(movie) {
     ? `${TMDB_IMAGE_BASE_URL}/w342${movie.poster_path}`
     : null;
 
+  const altText = escapeHtml(movie.title ?? '');
+
   card.innerHTML = `
     <div class="card__img-wrap">
       ${imgSrc
-        ? `<img class="card__img" src="${imgSrc}" alt="${escapeHtml(movie.title ?? '')}" loading="lazy" />`
+        ? `<img class="card__img" src="${imgSrc}" alt="${altText}" loading="lazy" />`
         : `<div class="card__placeholder">🎬<br>${escapeHtml(movie.title ?? '제목 없음')}</div>`
       }
     </div>
@@ -61,6 +63,15 @@ function createMovieCard(movie) {
       }
     </div>
   `;
+
+  // 이미지 로드 실패 시 플레이스홀더로 대체
+  if (imgSrc) {
+    const img = card.querySelector('.card__img');
+    const imgWrap = card.querySelector('.card__img-wrap');
+    img.addEventListener('error', () => {
+      imgWrap.innerHTML = `<div class="card__placeholder">🎬<br>${escapeHtml(movie.title ?? '제목 없음')}</div>`;
+    });
+  }
 
   // 클릭 / 키보드 진입
   const navigate = () => router.push(`/movie/${movie.id}`);
@@ -85,10 +96,12 @@ function createActorCard(actor) {
     ? `${TMDB_IMAGE_BASE_URL}/w185${actor.profile_path}`
     : null;
 
+  const altText = escapeHtml(actor.name ?? '');
+
   card.innerHTML = `
     <div class="card__img-wrap">
       ${imgSrc
-        ? `<img class="card__img" src="${imgSrc}" alt="${escapeHtml(actor.name ?? '')}" loading="lazy" />`
+        ? `<img class="card__img" src="${imgSrc}" alt="${altText}" loading="lazy" />`
         : `<div class="card__placeholder">👤</div>`
       }
     </div>
@@ -100,6 +113,15 @@ function createActorCard(actor) {
       }
     </div>
   `;
+
+  // 이미지 로드 실패 시 플레이스홀더로 대체
+  if (imgSrc) {
+    const img = card.querySelector('.card__img');
+    const imgWrap = card.querySelector('.card__img-wrap');
+    img.addEventListener('error', () => {
+      imgWrap.innerHTML = `<div class="card__placeholder">👤</div>`;
+    });
+  }
 
   return card;
 }
