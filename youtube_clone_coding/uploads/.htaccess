@@ -1,0 +1,10 @@
+# 업로드 폴더에서 PHP 실행 차단
+<FilesMatch "\.php$">
+    Require all denied
+</FilesMatch>
+
+# CGI, SSI 실행 차단
+Options -ExecCGI -Includes
+
+# .htaccess 자체 오버라이드 차단
+AllowOverride None

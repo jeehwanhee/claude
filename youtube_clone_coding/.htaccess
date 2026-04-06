@@ -1,0 +1,9 @@
+RewriteEngine On
+
+# config/, models/, controllers/ 직접 접근 차단
+RewriteRule ^(config|models|controllers|api/_bootstrap)(/|$) - [F,L]
+
+# 실제 파일/디렉토리는 그대로 서비스
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?route=$1 [QSA,L]
