@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YourTube API Docs</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #fafafa; }
+
+    #topbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 24px;
+      background: #212121;
+      border-bottom: 1px solid #303030;
+    }
+    #topbar svg { width: 28px; height: 28px; fill: #ff0000; flex-shrink: 0; }
+    #topbar span { color: #fff; font-family: sans-serif; font-size: 18px; font-weight: 600; }
+    #topbar small { color: #aaa; font-family: sans-serif; font-size: 13px; margin-left: 4px; }
+
+    #swagger-ui { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
+
+    /* execute 버튼만 유튜브 레드로 */
+    .swagger-ui .btn.execute { background: #ff0000; color: #fff; border-color: #cc0000; }
+    .swagger-ui .btn.execute:hover { background: #cc0000; }
+  </style>
+</head>
+<body>
+
+<div id="topbar">
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1C4.5 20.5 12 20.5 12 20.5s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.75 15.5v-7l6.5 3.5-6.5 3.5z"/>
+  </svg>
+  <span>YourTube</span>
+  <small>API Documentation</small>
+</div>
+
+<div id="swagger-ui"></div>
+
+<script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+<script>
+  SwaggerUIBundle({
+    url: '/public/api-docs/openapi.yaml',
+    dom_id: '#swagger-ui',
+    presets: [SwaggerUIBundle.presets.apis, SwaggerUIBundle.SwaggerUIStandalonePreset],
+    layout: 'BaseLayout',
+    deepLinking: true,
+    defaultModelsExpandDepth: 1,
+    defaultModelExpandDepth: 2,
+    displayRequestDuration: true,
+    tryItOutEnabled: true,
+  });
+</script>
+</body>
+</html>

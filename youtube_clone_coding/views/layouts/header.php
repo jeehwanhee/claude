@@ -40,7 +40,7 @@
                 업로드
             </a>
 
-            <div class="header-user">
+            <a href="/profile" class="header-user">
                 <img
                     src="<?= htmlspecialchars($gravatarUrl, ENT_QUOTES, 'UTF-8') ?>"
                     alt="<?= htmlspecialchars($_SESSION['username'], ENT_QUOTES, 'UTF-8') ?> 프로필"
@@ -51,7 +51,7 @@
                 <span class="header-username">
                     <?= htmlspecialchars($_SESSION['username'], ENT_QUOTES, 'UTF-8') ?>
                 </span>
-            </div>
+            </a>
 
             <a href="/logout" class="btn btn-outline btn-sm">로그아웃</a>
 

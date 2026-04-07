@@ -79,6 +79,11 @@ switch ($route) {
         (new UserController())->profile();
         break;
 
+    case 'video_delete':
+        require_once BASE_PATH . '/controllers/VideoController.php';
+        (new VideoController())->delete();
+        break;
+
     default:
         http_response_code(404);
         // 간단한 404 페이지

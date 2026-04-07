@@ -5,6 +5,3 @@
 
 # CGI, SSI 실행 차단
 Options -ExecCGI -Includes
-
-# .htaccess 자체 오버라이드 차단
-AllowOverride None

@@ -149,6 +149,48 @@ class VideoController {
         require BASE_PATH . '/views/watch.php';
     }
 
+    // ── 삭제 ─────────────────────────────────────────────────────────────────
+
+    public function delete(): void {
+        if (empty($_SESSION['user_id'])) {
+            header('Location: /login');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /');
+            exit;
+        }
+
+        csrf_verify();
+
+        $videoId = filter_input(INPUT_POST, 'video_id', FILTER_VALIDATE_INT);
+        if (!$videoId) {
+            header('Location: /profile');
+            exit;
+        }
+
+        $video = $this->videoModel->getById($videoId);
+
+        // 존재하지 않거나 본인 영상이 아니면 거부
+        if (!$video || (int)$video['user_id'] !== (int)$_SESSION['user_id']) {
+            http_response_code(403);
+            echo '삭제 권한이 없습니다.';
+            exit;
+        }
+
+        // 파일 삭제
+        $videoFile = BASE_PATH . '/uploads/videos/' . $video['filename'];
+        $thumbFile  = BASE_PATH . '/uploads/thumbnails/' . $video['thumbnail'];
+        if (file_exists($videoFile)) unlink($videoFile);
+        if (file_exists($thumbFile))  unlink($thumbFile);
+
+        $this->videoModel->delete($videoId);
+
+        header('Location: /profile');
+        exit;
+    }
+
     // ── private helpers ───────────────────────────────────────────────────────
 
     private function respondUploadError(array $errors, array $old): void {
@@ -171,7 +213,8 @@ class VideoController {
         $ffmpeg  = escapeshellarg(FFMPEG_PATH);
         $input   = escapeshellarg($videoPath);
         $output  = escapeshellarg($thumbPath);
-        $command = "{$ffmpeg} -i {$input} -ss 00:00:10 -vframes 1 {$output} 2>&1";
+        // -ss 1 : 1초 지점 (짧은 영상도 안전), -pix_fmt yuvj420p : mjpeg YUV 호환
+        $command = "{$ffmpeg} -ss 1 -i {$input} -vframes 1 -pix_fmt yuvj420p -q:v 2 -update 1 {$output} 2>&1";
 
         exec($command, $cmdOutput, $returnCode);
 

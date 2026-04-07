@@ -1,0 +1,347 @@
+openapi: 3.0.3
+
+info:
+  title: YourTube API
+  description: |
+    YourTube 유튜브 클론 프로젝트의 REST API 명세입니다.
+
+    ## 인증
+    세션 기반 인증을 사용합니다. `/login` 에서 로그인 후 세션 쿠키가 자동으로 유지됩니다.
+
+    ## CSRF 보호
+    `POST` 요청 시 `X-CSRF-Token` 헤더에 토큰을 포함해야 합니다.
+    토큰은 HTML `<meta name="csrf-token" content="...">` 에서 획득합니다.
+
+    ## 응답 형식
+    모든 응답은 `Content-Type: application/json` 입니다.
+
+    - 성공: HTTP 200 + JSON body
+    - 실패: HTTP 4xx + `{ "error": "메시지" }`
+  version: 1.0.0
+
+servers:
+  - url: http://yourtube.local/api
+    description: 로컬 개발 서버
+
+tags:
+  - name: 영상
+    description: 영상 조회수 관련
+  - name: 좋아요
+    description: 영상 좋아요 토글
+  - name: 구독
+    description: 채널 구독 토글
+  - name: 댓글
+    description: 댓글 및 대댓글 작성
+
+paths:
+  /view_count.php:
+    post:
+      tags: [영상]
+      summary: 조회수 증가
+      description: |
+        영상 조회수를 1 증가시키고 최신 조회수를 반환합니다.
+        같은 세션에서 동일 영상을 재요청하면 조회수 증가 없이 현재 값만 반환합니다.
+
+        **인증 불필요** — 비로그인 사용자도 호출 가능합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [video_id]
+              properties:
+                video_id:
+                  type: integer
+                  example: 1
+            example:
+              video_id: 1
+      responses:
+        '200':
+          description: 현재 조회수 반환
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ViewCountResponse'
+              examples:
+                증가됨:
+                  value:
+                    views: 42
+                중복(증가없음):
+                  value:
+                    views: 42
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+
+  /like.php:
+    post:
+      tags: [좋아요]
+      summary: 좋아요 토글
+      description: |
+        영상에 좋아요를 추가하거나 취소합니다 (토글).
+
+        **로그인 필요** — 미인증 시 401 반환.
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [video_id]
+              properties:
+                video_id:
+                  type: integer
+                  example: 1
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200':
+          description: 토글 결과
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LikeResponse'
+              examples:
+                좋아요_추가:
+                  value:
+                    liked: true
+                    count: 15
+                좋아요_취소:
+                  value:
+                    liked: false
+                    count: 14
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+
+  /subscribe.php:
+    post:
+      tags: [구독]
+      summary: 구독 토글
+      description: |
+        채널을 구독하거나 구독 취소합니다 (토글).
+
+        **로그인 필요** — 미인증 시 401 반환.
+        본인 채널은 구독 불가 (400 반환).
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [channel_id]
+              properties:
+                channel_id:
+                  type: integer
+                  description: 구독할 채널 소유자의 user_id
+                  example: 2
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200':
+          description: 토글 결과
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscribeResponse'
+              examples:
+                구독_추가:
+                  value:
+                    subscribed: true
+                    count: 128
+                구독_취소:
+                  value:
+                    subscribed: false
+                    count: 127
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+
+  /comment.php:
+    post:
+      tags: [댓글]
+      summary: 댓글 / 대댓글 작성
+      description: |
+        영상에 댓글을 작성합니다. `parent_id` 를 포함하면 대댓글이 됩니다.
+
+        **로그인 필요** — 미인증 시 401 반환.
+
+        - 내용 최대 1000자
+        - 2단계 계층 구조 (댓글 → 대댓글만 지원, 대댓글의 대댓글 없음)
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [video_id, content]
+              properties:
+                video_id:
+                  type: integer
+                  example: 1
+                content:
+                  type: string
+                  maxLength: 1000
+                  example: 영상 잘 봤습니다!
+                parent_id:
+                  type: integer
+                  nullable: true
+                  description: 대댓글인 경우 부모 댓글의 id (없으면 생략)
+                  example: 5
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200':
+          description: 작성된 댓글 정보
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentResponse'
+              examples:
+                댓글_작성:
+                  value:
+                    comment:
+                      id: 10
+                      parent_id: null
+                      username: hwanhee
+                      avatar: https://www.gravatar.com/avatar/abc123?s=40&d=identicon
+                      content: 영상 잘 봤습니다!
+                      created_at: 방금 전
+                대댓글_작성:
+                  value:
+                    comment:
+                      id: 11
+                      parent_id: 10
+                      username: hwanhee
+                      avatar: https://www.gravatar.com/avatar/abc123?s=40&d=identicon
+                      content: 감사합니다!
+                      created_at: 방금 전
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: PHPSESSID
+      description: PHP 세션 쿠키 (로그인 후 자동 설정)
+
+  parameters:
+    CsrfToken:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      description: CSRF 토큰 (`<meta name="csrf-token">` 에서 획득)
+      schema:
+        type: string
+        example: a1b2c3d4e5f6...
+
+  schemas:
+    ViewCountResponse:
+      type: object
+      properties:
+        views:
+          type: integer
+          description: 현재 조회수
+          example: 42
+
+    LikeResponse:
+      type: object
+      properties:
+        liked:
+          type: boolean
+          description: 좋아요 상태 (true = 좋아요 됨)
+        count:
+          type: integer
+          description: 전체 좋아요 수
+
+    SubscribeResponse:
+      type: object
+      properties:
+        subscribed:
+          type: boolean
+          description: 구독 상태 (true = 구독 중)
+        count:
+          type: integer
+          description: 전체 구독자 수
+
+    CommentResponse:
+      type: object
+      properties:
+        comment:
+          $ref: '#/components/schemas/Comment'
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+        parent_id:
+          type: integer
+          nullable: true
+          description: 대댓글이면 부모 댓글 id, 최상위 댓글이면 null
+        username:
+          type: string
+        avatar:
+          type: string
+          format: uri
+          description: Gravatar 이미지 URL
+        content:
+          type: string
+        created_at:
+          type: string
+          example: 방금 전
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: 오류 메시지
+
+  responses:
+    BadRequest:
+      description: 잘못된 요청 (파라미터 누락 또는 유효하지 않은 값)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: 유효하지 않은 video_id
+
+    Unauthorized:
+      description: 로그인 필요
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: 로그인이 필요합니다.
+
+    MethodNotAllowed:
+      description: 허용되지 않는 HTTP 메서드
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: POST 요청만 허용됩니다.

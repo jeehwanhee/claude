@@ -63,6 +63,12 @@ class Video {
         return $stmt->fetchAll();
     }
 
+    public function delete(int $id): bool {
+        $stmt = $this->db->prepare('DELETE FROM videos WHERE id = ?');
+        $stmt->execute([$id]);
+        return $stmt->rowCount() > 0;
+    }
+
     public function getRecent(int $limit = 5, int $excludeId = 0): array {
         $stmt = $this->db->prepare(
             'SELECT v.*, u.username, u.email

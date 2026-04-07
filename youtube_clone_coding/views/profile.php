@@ -51,28 +51,48 @@ require BASE_PATH . '/views/layouts/header.php';
         <?php else: ?>
             <div class="video-grid">
                 <?php foreach ($videos as $v): ?>
-                    <a href="/watch?v=<?= (int)$v['id'] ?>" class="video-card">
-                        <div class="thumbnail-wrap">
-                            <img
-                                src="/uploads/thumbnails/<?= htmlspecialchars($v['thumbnail'], ENT_QUOTES, 'UTF-8') ?>"
-                                alt="<?= htmlspecialchars($v['title'], ENT_QUOTES, 'UTF-8') ?>"
-                                loading="lazy"
-                                onerror="this.src='/public/img/default_thumbnail.jpg'"
-                            >
-                        </div>
-                        <div class="video-info">
-                            <div class="video-text">
-                                <p class="video-title">
-                                    <?= htmlspecialchars($v['title'], ENT_QUOTES, 'UTF-8') ?>
-                                </p>
-                                <p class="video-meta">
-                                    조회수 <?= number_format((int)$v['views']) ?>회
-                                    &nbsp;·&nbsp;
-                                    <?= time_ago($v['created_at']) ?>
-                                </p>
+                    <div class="video-card-wrap">
+                        <a href="/watch?v=<?= (int)$v['id'] ?>" class="video-card">
+                            <div class="thumbnail-wrap">
+                                <img
+                                    src="/uploads/thumbnails/<?= htmlspecialchars($v['thumbnail'], ENT_QUOTES, 'UTF-8') ?>"
+                                    alt="<?= htmlspecialchars($v['title'], ENT_QUOTES, 'UTF-8') ?>"
+                                    loading="lazy"
+                                    onerror="this.src='/public/img/default_thumbnail.jpg'"
+                                >
                             </div>
-                        </div>
-                    </a>
+                            <div class="video-info">
+                                <div class="video-text">
+                                    <p class="video-title">
+                                        <?= htmlspecialchars($v['title'], ENT_QUOTES, 'UTF-8') ?>
+                                    </p>
+                                    <p class="video-meta">
+                                        조회수 <?= number_format((int)$v['views']) ?>회
+                                        &nbsp;·&nbsp;
+                                        <?= time_ago($v['created_at']) ?>
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+
+                        <?php if ($isOwner): ?>
+                            <form
+                                class="delete-form"
+                                method="POST"
+                                action="/video_delete"
+                                onsubmit="return confirm('정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')"
+                            >
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_generate(), ENT_QUOTES, 'UTF-8') ?>">
+                                <input type="hidden" name="video_id" value="<?= (int)$v['id'] ?>">
+                                <button type="submit" class="btn-delete" aria-label="영상 삭제">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                        <path d="M9 3h6l1 1h4v2H4V4h4L9 3zm-3 5h12l-1 13H7L6 8zm4 2v9h1v-9H10zm3 0v9h1v-9h-1z"/>
+                                    </svg>
+                                    삭제
+                                </button>
+                            </form>
+                        <?php endif; ?>
+                    </div>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
